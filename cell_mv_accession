@@ -1,0 +1,96 @@
+ SELECT a.id AS accession_id,
+    a.cell_id AS accession_cell_id,
+    a.name AS accession_name,
+    a.eln AS accession_eln,
+    a.date_received AS accession_date_received,
+    a.date_discarded AS accession_date_discarded,
+    a.cell_source AS accession_cell_source,
+    a.catalog_num AS accession_catalog_num,
+    a.engineering_source AS accession_engineering_source,
+    a.reporter AS accession_reporter,
+    a.tag AS accession_tag,
+    a.engineering_method AS accession_engineering_method,
+    a.pool_name AS accession_pool_name,
+    a.clone_name AS accession_clone_name,
+    a.passage AS accession_passage_num,
+    a.status AS accession_status,
+    a.contact_person AS accession_contact_person,
+    a.comments AS accession_comments,
+    a.t1 AS accession_t1,
+    a.t2 AS accession_t2,
+    a.t3 AS accession_t3,
+    tag.name AS accession_tag_name,
+    r.name AS accession_reporter_name,
+    cs.name AS accession_cell_source_name,
+    es.name AS accession_engineering_source_name,
+    u.full_name AS accession_contact_person_name,
+    em.name AS accession_engineering_method_name,
+    c.name AS cell_name,
+    c.disease AS cell_disease,
+    c.source_tissue AS cell_source_tissue,
+    c.source_type as cell_source_type,
+    c.species AS cell_species,
+    ((s.common_name || '(') || s.scientific_name) || ')' AS cell_species_name,
+    c.cellosaurus_id AS cell_cellosaurus_id,
+    c.reference AS cell_reference,
+    c.comments AS cell_comments,
+    c.t1 AS cell_t1,
+    c.t2 AS cell_t2,
+    c.t3 AS cell_t3,
+    cv.synonyms AS cell_synonyms,
+    gene.ncbi_gene_id AS ncbi_gene_id,
+    gene.gene_symbol  AS gene_symbol,
+    a.id
+    || '|' || cells.remove_no_word(gene.gene_symbol)
+    || '|' || cells.remove_no_word(cv.synonyms)
+	|| '|' || cells.remove_no_word(c.name) 
+	|| '|' || cells.remove_no_word(c.disease) 
+	|| '|' || cells.remove_no_word(c.source_tissue) 
+	|| '|' || cells.remove_no_word(c.cellosaurus_id) 
+	|| '|' || cells.remove_no_word(c.reference) 
+	|| '|' || cells.remove_no_word(c.comments) 
+	|| '|' || cells.remove_no_word(s.common_name) 
+	|| '|' || cells.remove_no_word(s.scientific_name) 
+    || '|' || cells.remove_no_word(c.t1)
+    || '|' || cells.remove_no_word(c.t2)    
+    || '|' || cells.remove_no_word(c.t3) 
+    || '|' || cells.remove_no_word(a.name)  
+    || '|' || cells.remove_no_word(a.eln)   
+    || '|' || cells.remove_no_word(a.catalog_num)   
+    || '|' || cells.remove_no_word(a.pool_name)  
+    || '|' || cells.remove_no_word(a.clone_name)  
+    || '|' || cells.remove_no_word(a.comments)  
+    || '|' || cells.remove_no_word(a.t1)  
+    || '|' || cells.remove_no_word(a.t2)  
+    || '|' || cells.remove_no_word(a.t3)  
+    || '|' || cells.remove_no_word(tag.name) 
+    || '|' || cells.remove_no_word(r.name)  
+    || '|' || cells.remove_no_word(cs.name)  
+    || '|' || cells.remove_no_word(es.name)  
+    || '|' || cells.remove_no_word(em.name)   search_string,
+    (select count(cb.id) from cells.cell_batch cb where cb.accession_id = a.id) AS batch_count,
+	(select count(provenance_id) from cells.cell_accession_provenance where accession_id = a.id) AS provenance_count,
+    cb.id as biosafety_id,
+    cb. biosafety_level  as biosafety_level,
+    cb.gmo as biosafety_gmo,
+    cb.expiration_date as biosafety_expiration_date
+   FROM cells.cell_accession a
+     LEFT JOIN cells.cell_tag tag ON a.tag = tag.id
+     LEFT JOIN cells.cell_reporter r ON a.reporter = r.id
+     LEFT JOIN cells.lst_source cs ON a.cell_source = cs.id
+     LEFT JOIN cells.lst_source es ON a.engineering_source = es.id
+     LEFT JOIN cells.cell_engineering_method em ON a.engineering_method = em.id
+     LEFT JOIN cells."user" u ON a.contact_person = u.id
+     LEFT JOIN cells.cell_cell c ON a.cell_id = c.id
+     LEFT JOIN cells.lst_species s ON c.species = s.id
+     LEFT JOIN cells.cell_v_synonyms cv ON c.cellosaurus_id = cv.cellosaurus_id
+     LEFT JOIN cells.cell_biosafety cb ON a.id = cb.accession_id
+     LEFT JOIN cells.cell_v_accession_gene gene ON a.id = gene.accession_id
+
+--------
+create index cell_mv_accession_ix_search_string on cells.cell_mv_accession (search_string);
+create index cell_mv_accession_ix_name on cells.cell_mv_accession (accession_name);
+create index cell_mv_accession_ix_tag on cells.cell_mv_accession (accession_tag);
+create index cell_mv_accession_ix_reporter on cells.cell_mv_accession (accession_reporter);
+create index cell_mv_accession_ix_status on cells.cell_mv_accession (accession_status);
+create index cell_mv_accession_ix_species  on cells.cell_mv_accession (cell_species);     
